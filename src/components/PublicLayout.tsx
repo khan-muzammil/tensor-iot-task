@@ -1,6 +1,6 @@
 import React from "react";
-import Header from "./Header";
 import { Outlet } from "react-router-dom";
+import Header from "./Header";
 
 const PublicLayout: React.FC = () => {
   return (
@@ -10,9 +10,7 @@ const PublicLayout: React.FC = () => {
       </div>
 
       <div className="w-full">
-        <div>
-          <Outlet />
-        </div>
+        <Outlet />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React from "react";
 
 type Props = {
-  className: string;
+  className?: string;
 };
 
 const Filter: React.FC<Props> = ({ className = "w-4 h-4" }) => {
