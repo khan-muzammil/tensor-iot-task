@@ -15,6 +15,7 @@ import Filter from "./components/Icons/Filter";
 import LaunchDetailsModalBody from "./components/LaunchDetailsModalBody";
 import { getLaunchesData } from "./services/common";
 import LaunchesTable from "./components/LaunchesTable";
+import { getStartAndEnd } from "./utils";
 
 const itemsPerPage = 12;
 
@@ -27,48 +28,95 @@ const filterMapper = {
 
 const dateFilterMapper = {
   lastTwoYear: "Last 2 Years",
+  lastTwentyYear: "Last 20 Years",
   lastYear: "Last 1 Year",
   pastSixMonths: "Past 6 Months",
+  lastFiveYear: "Last 5 Years",
   pastThreeMonths: "Past 3 Months",
 };
 
 export type Filter = "all" | "upcoming" | "success" | "failure";
-export type DateFilter = "lastTwoYear" | "lastYear" | "pastSixMonths" | "pastThreeMonths" | "";
+export type DateFilter =
+  | "lastTwoYear"
+  | "lastYear"
+  | "lastFiveYear"
+  | "pastSixMonths"
+  | "pastThreeMonths"
+  | "lastTwentyYear"
+  | "";
 
 const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [dateFilter, setDateFilter] = useState<DateFilter>("");
-  const [filter, setFilter] = useState<Filter>("all");
-  const [launchesData, setLaunchesData] = useState([]);
+  const [dateFilter, setDateFilter] = useState<DateFilter>(
+    `${searchParams.get("range") || ""}` as DateFilter
+  );
+  const [filter, setFilter] = useState<Filter>(`${searchParams.get("filter") || "all"}` as Filter);
+  const [launchesData, setLaunchesData] = useState<any>([]);
+  const [filteredData, setFilteredData] = useState<any>([]);
   const [itemOffset, setItemOffset] = useState(0);
   const [selectedRow, setSelectedRow] = useState<null | number>(null);
+  const [loading, setLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const endOffset = itemOffset + itemsPerPage;
-  const currentItems = launchesData.length ? launchesData.slice(itemOffset, endOffset) : [];
-  const pageCount = Math.ceil(launchesData.length / itemsPerPage);
+  const currentItems = launchesData.length
+    ? (filter === "all" ? launchesData : filteredData).slice(itemOffset, endOffset)
+    : [];
+  const pageCount = Math.ceil(
+    (filter === "all" ? launchesData : filteredData).length / itemsPerPage
+  );
 
   const handlePageClick = (event: any) => {
-    const newOffset = (event.selected * itemsPerPage) % launchesData.length;
+    const newOffset =
+      (event.selected * itemsPerPage) % (filter === "all" ? launchesData : filteredData).length;
     setItemOffset(newOffset);
   };
 
   useEffect(() => {
     getData();
-  }, []);
+  }, [dateFilter]);
 
   const getData = async () => {
-    const { data } = await getLaunchesData();
+    setLoading(true);
+    const { start, end } = getStartAndEnd(dateFilter as DateFilter);
+    console.log(dateFilter, start, end);
+    const { data } = await getLaunchesData({ start: start || "", end: end || "" });
     setLaunchesData(data);
+    setLoading(false);
   };
 
-  const handleFilterChange = (newFilter: string) => setFilter(newFilter as Filter);
+  const handleFiltering = () => {
+    const data = launchesData.filter((elem: any) => {
+      if (filter === "all") return true;
+      if (filter === "success") return elem.launch_success;
+      if (filter === "upcoming") return elem.upcoming;
+      if (filter === "failure") return elem.launch_success === false;
+    });
+    setFilteredData(data);
+  };
 
-  const handleRangeChange = (newRange: string) => setDateFilter(newRange as DateFilter);
+  useEffect(() => {
+    handleFiltering();
+  }, [filter, launchesData]);
 
-  // useEffect(() => {
+  const handleFilterChange = (newFilter: string) => {
+    setSearchParams((prevState) => {
+      const range = prevState.get("range") as string;
 
-  // }, [filter])
+      return { filter: newFilter, range };
+    });
+    setFilter(newFilter as Filter);
+  };
+
+  const handleRangeChange = (newRange: string) => {
+    const { start, end } = getStartAndEnd(newRange as DateFilter);
+    if (start && end) {
+      setSearchParams((prevState) => {
+        return { filter: prevState.get("filter") || ("all" as string), range: newRange };
+      });
+    }
+    setDateFilter(newRange as DateFilter);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -79,12 +127,20 @@ const Dashboard: React.FC = () => {
           onClickHandler={handleRangeChange}
           options={[
             {
+              value: "lastFiveYear",
+              label: "Last 5 Years",
+            },
+            {
               value: "lastTwoYear",
               label: "Last 2 Years",
             },
             {
               value: "lastYear",
               label: "Last 1 Year",
+            },
+            {
+              value: "lastTwentyYear",
+              label: "Last 20 Years",
             },
             {
               value: "pastSixMonths",
@@ -123,10 +179,11 @@ const Dashboard: React.FC = () => {
       </div>
 
       <LaunchesTable
-        length={launchesData.length}
+        length={currentItems.length}
         itemOffset={itemOffset}
         setSelectedRow={setSelectedRow}
         onOpen={onOpen}
+        isLoading={loading}
         currentItems={currentItems}
       />
       <ReactPaginate

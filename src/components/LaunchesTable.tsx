@@ -1,6 +1,6 @@
 import { Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import React from "react";
-import { formatTime } from "../utils";
+import { formatTime, getStatus } from "../utils";
 import LaunchStatus from "./LaunchStatus";
 import Loader from "./Loader";
 
@@ -10,6 +10,7 @@ type Props = {
   setSelectedRow: (flightNumber: number) => void;
   onOpen: () => void;
   currentItems: any;
+  isLoading: boolean;
 };
 
 const LaunchesTable: React.FC<Props> = ({
@@ -18,6 +19,7 @@ const LaunchesTable: React.FC<Props> = ({
   currentItems,
   setSelectedRow,
   onOpen,
+  isLoading,
 }) => {
   return (
     <TableContainer className="rounded-md border border-primary mt-6">
@@ -38,7 +40,7 @@ const LaunchesTable: React.FC<Props> = ({
           </Tr>
         </Thead>
         <Tbody className="text-center text-sm text-primary">
-          {length ? (
+          {!isLoading ? (
             currentItems.map((elem: any, idx: number) => (
               <Tr
                 key={idx}
@@ -54,20 +56,8 @@ const LaunchesTable: React.FC<Props> = ({
                 <Td>{elem.mission_name}</Td>
                 <Td>{elem.rocket.second_stage.payloads[0].orbit}</Td>
                 <Td>
-                  <LaunchStatus
-                    type={
-                      elem.launch_success
-                        ? "success"
-                        : elem.launch_success == null
-                        ? "upcoming"
-                        : "failed"
-                    }
-                  >
-                    {elem.launch_success
-                      ? "Success"
-                      : elem.launch_success == null
-                      ? "Upcoming"
-                      : "Failed"}
+                  <LaunchStatus type={getStatus(elem.launch_success, elem.upcoming)}>
+                    {getStatus(elem.launch_success, elem.upcoming)}
                   </LaunchStatus>
                 </Td>
                 <Td>{elem.rocket.rocket_name}</Td>
@@ -77,6 +67,13 @@ const LaunchesTable: React.FC<Props> = ({
             <Tr className="h-96">
               <Td colSpan={12} className="w-full">
                 <Loader />
+              </Td>
+            </Tr>
+          )}
+          {!length && !isLoading && (
+            <Tr className="h-96">
+              <Td colSpan={12} textAlign="center" className="w-full mx-auto">
+                No results found for the specified filter
               </Td>
             </Tr>
           )}

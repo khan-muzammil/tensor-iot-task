@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getLaunchDataByFlightNumber } from "../services/common";
-import { formatTime } from "../utils";
+import { formatTime, getStatus } from "../utils";
 import LaunchStatus from "./LaunchStatus";
 import Loader from "./Loader";
 
@@ -37,19 +37,9 @@ const LaunchDetailsModalBody: React.FC<Props> = ({ flightNumber }) => {
             <p className={`text-lg font-regular `}>{launchDetails?.mission_name}</p>
             {
               <LaunchStatus
-                type={
-                  launchDetails?.launch_success
-                    ? "success"
-                    : launchDetails?.launch_success == null
-                    ? "upcoming"
-                    : "failed"
-                }
+                type={getStatus(launchDetails?.launch_success, launchDetails?.upcoming)}
               >
-                {launchDetails?.launch_success
-                  ? "Success"
-                  : launchDetails?.launch_success == null
-                  ? "Upcoming"
-                  : "Failed"}
+                {getStatus(launchDetails?.launch_success, launchDetails?.upcoming)}
               </LaunchStatus>
             }
           </div>

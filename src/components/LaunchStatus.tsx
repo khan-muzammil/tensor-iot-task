@@ -17,7 +17,7 @@ const LaunchStatus: React.FC<Props> = ({ type, className, children, ...props }) 
   return (
     <div className="flex justify-center" {...props}>
       <div
-        className={`${classNames} px-3 py-1 text-center rounded-full font-medium text-xs inline-block`}
+        className={`${classNames} px-3 py-1 text-center rounded-full font-medium text-xs inline-block capitalize`}
       >
         {children}
       </div>
